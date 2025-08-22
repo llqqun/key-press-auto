@@ -5,7 +5,7 @@ import random
 class Step:
     key: str           # 按键
     delay: float       # 基础延迟（秒）
-    random_offset: float = 0.0  # 随机波动（秒）
+    random_offset: float = 0.1  # 随机波动（秒）
 
     def get_wait_time(self):
         if self.random_offset > 0:
