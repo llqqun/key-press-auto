@@ -1,7 +1,8 @@
+import json
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem,
     QSpinBox, QDoubleSpinBox, QLabel, QHBoxLayout, QLineEdit, QApplication,
-    QHeaderView, QCheckBox
+    QHeaderView, QCheckBox, QFileDialog
 )
 from PyQt6.QtCore import Qt
 from config import Step
@@ -55,6 +56,10 @@ class MacroConfigWindow(QWidget):
         btn_save = QPushButton("保存配置")
         btn_save.clicked.connect(self.save_config)
         btn_layout.addWidget(btn_save)
+        
+        btn_load = QPushButton("加载配置")
+        btn_load.clicked.connect(self.load_config)
+        btn_layout.addWidget(btn_load)
 
         btn_start = QPushButton("启动")
         btn_start.clicked.connect(self.start_macro)
@@ -74,6 +79,24 @@ class MacroConfigWindow(QWidget):
             delay = float(self.table.item(row, 1).text())
             rand = float(self.table.item(row, 2).text())
             steps.append(Step(key, delay, rand))
+        
+        # 创建配置字典，包含步骤和循环参数
+        config = {
+            'steps': [step.to_dict() for step in steps],
+            'loop_count': self.loop_count.value(),
+            'loop_time': self.loop_time.value(),
+            'mouse_click_double': self.executor.mouse_click_double
+        }
+        
+        # 显示文件对话框让用户选择保存位置
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "保存配置", "", "JSON Files (*.json);;All Files (*)")
+        
+        if file_path:
+            # 保存为JSON文件
+            with open(file_path, "w", encoding='utf-8') as f:
+                json.dump(config, f, indent=4, ensure_ascii=False)
+            print(f"配置已保存到: {file_path}")
 
     def add_step(self):
         row = self.table.rowCount()
@@ -118,6 +141,48 @@ class MacroConfigWindow(QWidget):
                                  loop_count=self.loop_count.value(),
                                  loop_time=self.loop_time.value())
         self.executor.start()
+
+    def load_config(self):
+        # 显示文件对话框让用户选择要加载的文件
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "加载配置", "", "JSON Files (*.json);;All Files (*)")
+        
+        if file_path:
+            try:
+                # 从JSON文件加载配置
+                with open(file_path, "r", encoding='utf-8') as f:
+                    config = json.load(f)
+                
+                # 清空现有表格内容
+                self.table.setRowCount(0)
+                
+                # 加载步骤
+                if 'steps' in config:
+                    for step_data in config['steps']:
+                        row = self.table.rowCount()
+                        self.table.insertRow(row)
+                        self.table.setItem(row, 0, QTableWidgetItem(step_data['key']))
+                        self.table.setItem(row, 1, QTableWidgetItem(str(step_data['delay'])))
+                        self.table.setItem(row, 2, QTableWidgetItem(str(step_data.get('random_offset', 0.1))))
+                        
+                        delete_btn = QPushButton("删除")
+                        delete_btn.clicked.connect(self.create_delete_handler())
+                        self.table.setCellWidget(row, 3, delete_btn)
+                
+                # 加载循环参数
+                if 'loop_count' in config:
+                    self.loop_count.setValue(config['loop_count'])
+                if 'loop_time' in config:
+                    self.loop_time.setValue(config['loop_time'])
+                
+                # 加载鼠标连点设置
+                if 'mouse_click_double' in config:
+                    self.mouse_click_checkbox.setChecked(config['mouse_click_double'])
+                    self.executor.mouse_click_double = config['mouse_click_double']
+                
+                print(f"配置已从: {file_path} 加载")
+            except Exception as e:
+                print(f"加载配置失败: {str(e)}")
 
     def stop_macro(self):
         self.executor.stop()

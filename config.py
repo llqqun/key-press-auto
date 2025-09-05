@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import random
+from dataclasses import dataclass, asdict
 
 @dataclass
 class Step:
@@ -11,3 +11,7 @@ class Step:
         if self.random_offset > 0:
             return self.delay + random.uniform(-self.random_offset, self.random_offset)
         return self.delay
+    
+    def to_dict(self):
+        # 将Step对象转换为字典，用于JSON序列化
+        return asdict(self)
