@@ -1,7 +1,6 @@
 import pyautogui
 import time
 import threading
-import keyboard
 
 class MacroExecutor:
     def __init__(self):
@@ -28,13 +27,16 @@ class MacroExecutor:
         self.running = True
         self.paused = False
         self.thread = threading.Thread(target=self.run_loop, daemon=True)
-        self.thread_mouse = threading.Thread(target=self.run_mouse, daemon=True)
         self.thread.start()
-        self.thread_mouse.start()
+
+        if self.mouse_click_double:
+            self.thread_mouse = threading.Thread(target=self.run_mouse, daemon=True)
+            self.thread_mouse.start()
 
     def stop(self):
         print("停止")
         self.running = False
+        self.paused = False
 
     def pause(self):
         print("暂停")
@@ -52,18 +54,14 @@ class MacroExecutor:
                 break
             if self.loop_time and (time.time() - start_time >= self.loop_time):
                 break
-            # print('任务运行中...')
+
             for step in self.steps:
                 if not self.running:
                     break
                 while self.paused:
-                    time.sleep(0.1)
+                    time.sleep(1)
 
                 pyautogui.press(step.key)
-                
-                # 如果启用了鼠标连点功能，执行鼠标点击
-                # if self.mouse_click_double:
-                #     pyautogui.click()
                     
                 wait_time = step.get_wait_time()
                 time.sleep(max(0, wait_time))
@@ -72,7 +70,7 @@ class MacroExecutor:
     def run_mouse(self):
         while self.running:
             if self.paused:
-                time.sleep(0.1)
+                time.sleep(1)
                 continue
             if self.mouse_click_double:
                 pyautogui.click()

@@ -2,26 +2,26 @@
     "steps": [
         {
             "key": "a",
-            "delay": 1.0,
+            "delay": 0.1,
             "random_offset": 0.2
         },
         {
             "key": "b",
-            "delay": 1.0,
+            "delay": 0.1,
             "random_offset": 0.2
         },
         {
             "key": "c",
-            "delay": 1.0,
+            "delay": 0.1,
             "random_offset": 0.2
         },
         {
             "key": "d",
-            "delay": 1.0,
+            "delay": 0.1,
             "random_offset": 0.2
         }
     ],
     "loop_count": 0,
-    "loop_time": 6,
-    "mouse_click_double": false
+    "loop_time": 0,
+    "mouse_click_double": true
 }

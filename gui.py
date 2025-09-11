@@ -2,10 +2,82 @@ import json
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QTableWidget, QTableWidgetItem,
     QSpinBox, QDoubleSpinBox, QLabel, QHBoxLayout, QLineEdit, QApplication,
-    QHeaderView, QCheckBox, QFileDialog
+    QHeaderView, QCheckBox, QFileDialog, QDialog, QMessageBox
 )
 from PyQt6.QtCore import Qt
-from config import Step
+from module.Step import Step
+from config import config
+
+class ShortcutConfigDialog(QDialog):
+    """快捷键配置对话框"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("配置快捷键")
+        self.resize(400, 200)
+        
+        # 获取当前配置
+        self.shortcuts = config.keys.copy()
+        
+        self.init_ui()
+    
+    def init_ui(self):
+        layout = QVBoxLayout()
+        
+        # 创建表格用于显示和编辑快捷键
+        self.table = QTableWidget(len(self.shortcuts), 2)
+        self.table.setHorizontalHeaderLabels(["功能", "快捷键"])
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        
+        # 填充表格
+        for row, shortcut in enumerate(self.shortcuts):
+            # 功能列不可编辑
+            func_item = QTableWidgetItem(shortcut["title"])
+            func_item.setFlags(func_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.table.setItem(row, 0, func_item)
+            
+            # 快捷键列可编辑
+            key_item = QTableWidgetItem(shortcut["key"])
+            self.table.setItem(row, 1, key_item)
+        
+        layout.addWidget(self.table)
+        
+        # 按钮行
+        btn_layout = QHBoxLayout()
+        btn_save = QPushButton("保存")
+        btn_save.clicked.connect(self.save_shortcuts)
+        btn_layout.addWidget(btn_save)
+        
+        btn_cancel = QPushButton("取消")
+        btn_cancel.clicked.connect(self.reject)
+        btn_layout.addWidget(btn_cancel)
+        
+        layout.addLayout(btn_layout)
+        self.setLayout(layout)
+    
+    def save_shortcuts(self):
+        """保存快捷键配置"""
+        # 更新快捷键配置
+        for row in range(self.table.rowCount()):
+            title = self.table.item(row, 0).text()
+            key = self.table.item(row, 1).text()
+            # 检查是否已存在相同的快捷键
+            if any(shortcut["key"] == key for shortcut in self.shortcuts if shortcut["title"] != title):
+                QMessageBox.warning(self, "警告", "快捷键已存在，请重新输入！")
+                return
+            
+            # 查找对应的配置项并更新
+            for shortcut in self.shortcuts:
+                if shortcut["title"] == title:
+                    shortcut["key"] = key
+                    break
+        
+        # 更新全局配置
+        config.keys = self.shortcuts
+        config.save_config()
+        
+        QMessageBox.information(self, "提示", "快捷键配置已保存！")
+        self.accept()
 
 class MacroConfigWindow(QWidget):
     def __init__(self, executor):
@@ -61,16 +133,25 @@ class MacroConfigWindow(QWidget):
         btn_load.clicked.connect(self.load_config)
         btn_layout.addWidget(btn_load)
 
-        self.start_btn = QPushButton("启动 F10")
+        self.start_btn = QPushButton("启动")
         self.start_btn.clicked.connect(self.start_macro)
         btn_layout.addWidget(self.start_btn)
 
-        btn_stop = QPushButton("停止 F11")
+        btn_stop = QPushButton("停止")
         btn_stop.clicked.connect(self.stop_macro)
         btn_layout.addWidget(btn_stop)
+        
+        # 添加快捷键配置按钮
+        btn_shortcut = QPushButton("配置快捷键")
+        btn_shortcut.clicked.connect(self.show_shortcut_config)
+        btn_layout.addWidget(btn_shortcut)
+        
         layout.addLayout(btn_layout)
 
         self.setLayout(layout)
+        
+        # 初始化按钮文本，显示当前快捷键
+        self.update_button_texts()
 
     def save_config(self):
         steps = []
@@ -102,8 +183,8 @@ class MacroConfigWindow(QWidget):
         row = self.table.rowCount()
         self.table.insertRow(row)
         self.table.setItem(row, 0, QTableWidgetItem("a"))
-        self.table.setItem(row, 1, QTableWidgetItem("1.0"))
-        self.table.setItem(row, 2, QTableWidgetItem("0.2"))
+        self.table.setItem(row, 1, QTableWidgetItem("0.1"))
+        self.table.setItem(row, 2, QTableWidgetItem("0.1"))
         
         delete_btn = QPushButton("删除")
         delete_btn.clicked.connect(self.create_delete_handler())
@@ -131,17 +212,31 @@ class MacroConfigWindow(QWidget):
         self.executor.mouse_click_double = (state == Qt.CheckState.Checked.value)
 
     def start_macro(self):
+        start_key = config.get_key_by_title("启动/暂停")
+        print(self.executor.running, self.executor.paused)
         if self.executor.running and self.executor.paused:
+            print('继续执行')
             # 继续执行同时修改按钮文案
-            self.start_btn.setText("暂停 F10")
+            if start_key:
+                self.start_btn.setText(f"暂停 {start_key}")
+            else:
+                self.start_btn.setText("暂停")
             self.executor.resume()
             return
         elif self.executor.running and not self.executor.paused:
-            self.start_btn.setText("继续 F10")
+            print('暂停执行')
+            if start_key:
+                self.start_btn.setText(f"继续 {start_key}")
+            else:
+                self.start_btn.setText("继续")
             self.executor.pause()
             return
         elif not self.executor.running:
-            self.start_btn.setText("暂停 F10")
+            print('启动执行')
+            if start_key:
+                self.start_btn.setText(f"暂停 {start_key}")
+            else:
+                self.start_btn.setText("暂停")
 
         steps = []
         for row in range(self.table.rowCount()):
@@ -196,6 +291,32 @@ class MacroConfigWindow(QWidget):
             except Exception as e:
                 print(f"加载配置失败: {str(e)}")
 
+    def update_button_texts(self):
+        """更新按钮文本，显示当前配置的快捷键"""
+        start_key = config.get_key_by_title("启动/暂停")
+        stop_key = config.get_key_by_title("停止")
+        
+        if start_key:
+            self.start_btn.setText(f"启动 {start_key}")
+        if stop_key:
+            stop_btn = self.findChild(QPushButton, "")
+            # 查找停止按钮
+            for child in self.findChildren(QPushButton):
+                if child.text().startswith("停止"):
+                    child.setText(f"停止 {stop_key}")
+                    break
+    
+    def show_shortcut_config(self):
+        """显示快捷键配置对话框"""
+        dialog = ShortcutConfigDialog(self)
+        if dialog.exec():
+            # 如果用户保存了配置，更新按钮文本
+            self.update_button_texts()
+    
     def stop_macro(self):
-        self.start_btn.setText("启动 F10")
+        start_key = config.get_key_by_title("启动/暂停")
+        if start_key:
+            self.start_btn.setText(f"启动 {start_key}")
+        else:
+            self.start_btn.setText("启动")
         self.executor.stop()
