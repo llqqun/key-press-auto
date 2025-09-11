@@ -12,8 +12,8 @@ def main():
     window.show()
 
     # 全局热键绑定
-    keyboard.add_hotkey("f12", lambda: executor.pause())
-    keyboard.add_hotkey("f11", lambda: executor.resume())
+    keyboard.add_hotkey("f10", lambda: window.start_macro())
+    keyboard.add_hotkey("f11", lambda: window.stop_macro())
 
     sys.exit(app.exec())
 

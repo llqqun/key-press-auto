@@ -42,7 +42,7 @@ class MacroExecutor:
 
     def resume(self):
         print("继续")
-        self.start()
+        self.paused = False
 
     def run_loop(self):
         start_time = time.time()
@@ -52,7 +52,7 @@ class MacroExecutor:
                 break
             if self.loop_time and (time.time() - start_time >= self.loop_time):
                 break
-            print('任务运行中...')
+            # print('任务运行中...')
             for step in self.steps:
                 if not self.running:
                     break
@@ -68,9 +68,6 @@ class MacroExecutor:
                 wait_time = step.get_wait_time()
                 time.sleep(max(0, wait_time))
             count += 1
-
-        print('任务暂停...')
-        self.running = False
 
     def run_mouse(self):
         while self.running:

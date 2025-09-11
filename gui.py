@@ -61,11 +61,11 @@ class MacroConfigWindow(QWidget):
         btn_load.clicked.connect(self.load_config)
         btn_layout.addWidget(btn_load)
 
-        btn_start = QPushButton("启动")
-        btn_start.clicked.connect(self.start_macro)
-        btn_layout.addWidget(btn_start)
+        self.start_btn = QPushButton("启动 F10")
+        self.start_btn.clicked.connect(self.start_macro)
+        btn_layout.addWidget(self.start_btn)
 
-        btn_stop = QPushButton("停止")
+        btn_stop = QPushButton("停止 F11")
         btn_stop.clicked.connect(self.stop_macro)
         btn_layout.addWidget(btn_stop)
         layout.addLayout(btn_layout)
@@ -131,6 +131,18 @@ class MacroConfigWindow(QWidget):
         self.executor.mouse_click_double = (state == Qt.CheckState.Checked.value)
 
     def start_macro(self):
+        if self.executor.running and self.executor.paused:
+            # 继续执行同时修改按钮文案
+            self.start_btn.setText("暂停 F10")
+            self.executor.resume()
+            return
+        elif self.executor.running and not self.executor.paused:
+            self.start_btn.setText("继续 F10")
+            self.executor.pause()
+            return
+        elif not self.executor.running:
+            self.start_btn.setText("暂停 F10")
+
         steps = []
         for row in range(self.table.rowCount()):
             key = self.table.item(row, 0).text()
@@ -185,4 +197,5 @@ class MacroConfigWindow(QWidget):
                 print(f"加载配置失败: {str(e)}")
 
     def stop_macro(self):
+        self.start_btn.setText("启动 F10")
         self.executor.stop()
