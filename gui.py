@@ -116,8 +116,8 @@ class MacroConfigWindow(QWidget):
         self.mouse_click_checkbox.stateChanged.connect(self.toggle_mouse_click)
         mouse_layout.addWidget(self.mouse_click_checkbox)
         
-        # 添加pydirectinput游戏模式复选框
-        self.game_mode_directinput_checkbox = QCheckBox("使用pydirectinput游戏模式")
+        # 添加SendInput游戏模式复选框
+        self.game_mode_directinput_checkbox = QCheckBox("使用SendInput游戏模式(兼容性更好)")
         self.game_mode_directinput_checkbox.setChecked(False)  # 默认不启用
         self.game_mode_directinput_checkbox.stateChanged.connect(self.toggle_game_mode_directinput)
         mouse_layout.addWidget(self.game_mode_directinput_checkbox)
@@ -218,7 +218,7 @@ class MacroConfigWindow(QWidget):
         self.executor.mouse_click_double = (state == Qt.CheckState.Checked.value)
         
     def toggle_game_mode_directinput(self, state):
-        """切换pydirectinput游戏模式"""
+        """切换SendInput游戏模式"""
         self.executor.set_game_mode_directinput(state == Qt.CheckState.Checked.value)
 
     def start_macro(self):

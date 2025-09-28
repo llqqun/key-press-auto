@@ -1,7 +1,7 @@
 import pyautogui
 import time
 import threading
-from game_input_pydirectinput import GameDirectInput  # 导入使用pydirectinput的游戏输入模块
+from game_input_sendinput import GameSendInput  # 导入使用SendInput的游戏输入模块
 
 class MacroExecutor:
     def __init__(self):
@@ -13,8 +13,8 @@ class MacroExecutor:
         self.loop_time = 0 # 循环时间
         self.thread = None  # 键盘线程
         self.thread_mouse = None  # 鼠标线程
-        self.game_mode_directinput = False  # pydirectinput游戏模式标志
-        self.game_direct_input = GameDirectInput()  # 创建pydirectinput实例
+        self.game_mode_directinput = False  # SendInput游戏模式标志
+        self.game_direct_input = GameSendInput()  # 创建SendInput实例
 
 
     def load_steps(self, steps, loop_count=0, loop_time=0):
@@ -50,7 +50,7 @@ class MacroExecutor:
         self.paused = False
         
     def set_game_mode_directinput(self, enabled):
-        """设置是否使用pydirectinput游戏模式"""
+        """设置是否使用SendInput游戏模式"""
         self.game_mode_directinput = enabled
 
     def run_loop(self):
@@ -70,6 +70,7 @@ class MacroExecutor:
 
                 # 根据模式选择不同的按键模拟方法
                 if self.game_mode_directinput:
+                    print('游戏模式:', step.key)
                     self.game_direct_input.press_key(step.key)
                 else:
                     pyautogui.press(step.key)
