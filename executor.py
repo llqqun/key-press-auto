@@ -2,6 +2,7 @@ import pyautogui
 import time
 import threading
 from game_input_pydirectinput import GameDirectInput  # 导入使用pydirectinput的游戏输入模块
+from game_input_win32 import GameWin32Input  # 导入使用pywin32的游戏输入模块
 
 class MacroExecutor:
     def __init__(self):
@@ -14,7 +15,9 @@ class MacroExecutor:
         self.thread = None  # 键盘线程
         self.thread_mouse = None  # 鼠标线程
         self.game_mode_directinput = False  # pydirectinput游戏模式标志
+        self.game_mode_win32 = False  # pywin32游戏模式标志
         self.game_direct_input = GameDirectInput()  # 创建pydirectinput实例
+        self.game_win32_input = GameWin32Input()  # 创建pywin32实例
 
 
     def load_steps(self, steps, loop_count=0, loop_time=0):
@@ -52,6 +55,16 @@ class MacroExecutor:
     def set_game_mode_directinput(self, enabled):
         """设置是否使用pydirectinput游戏模式"""
         self.game_mode_directinput = enabled
+        # 如果启用了pydirectinput模式，自动禁用win32模式
+        if enabled:
+            self.game_mode_win32 = False
+            
+    def set_game_mode_win32(self, enabled):
+        """设置是否使用pywin32游戏模式"""
+        self.game_mode_win32 = enabled
+        # 如果启用了win32模式，自动禁用pydirectinput模式
+        if enabled:
+            self.game_mode_directinput = False
 
     def run_loop(self):
         start_time = time.time()
@@ -69,7 +82,9 @@ class MacroExecutor:
                     time.sleep(1)
 
                 # 根据模式选择不同的按键模拟方法
-                if self.game_mode_directinput:
+                if self.game_mode_win32:
+                    self.game_win32_input.press_key(step.key)
+                elif self.game_mode_directinput:
                     self.game_direct_input.press_key(step.key)
                 else:
                     pyautogui.press(step.key)
@@ -85,7 +100,9 @@ class MacroExecutor:
                 continue
             if self.mouse_click_double:
                 # 根据模式选择不同的鼠标点击方法
-                    if self.game_mode_directinput:
+                    if self.game_mode_win32:
+                        self.game_win32_input.click()
+                    elif self.game_mode_directinput:
                         self.game_direct_input.click()
                     else:
                         pyautogui.click()
