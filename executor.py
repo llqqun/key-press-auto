@@ -15,7 +15,9 @@ class MacroExecutor:
         self.thread = None  # 键盘线程
         self.thread_mouse = None  # 鼠标线程
         self.game_mode_directinput = False  # pydirectinput游戏模式标志
+        self.game_mode_win32 = False  # pywin32游戏模式标志
         self.game_direct_input = GameDirectInput()  # 创建pydirectinput实例
+        self.game_win32_input = GameWin32Input()  # 创建pywin32实例
 
 
     def load_steps(self, steps, loop_count=0, loop_time=0):
