@@ -122,6 +122,12 @@ class MacroConfigWindow(QWidget):
         self.game_mode_directinput_checkbox.stateChanged.connect(self.toggle_game_mode_directinput)
         mouse_layout.addWidget(self.game_mode_directinput_checkbox)
         
+        # 添加pywin32游戏模式复选框
+        self.game_mode_win32_checkbox = QCheckBox("使用pywin32按键模式")
+        self.game_mode_win32_checkbox.setChecked(False)  # 默认不启用
+        self.game_mode_win32_checkbox.stateChanged.connect(self.toggle_game_mode_win32)
+        mouse_layout.addWidget(self.game_mode_win32_checkbox)
+        
         # 添加到主布局
         layout.addLayout(mouse_layout)
 
@@ -161,11 +167,26 @@ class MacroConfigWindow(QWidget):
 
     def save_config(self):
         steps = []
-        for row in range(self.table.rowCount()):
-            key = self.table.item(row, 0).text()
-            delay = float(self.table.item(row, 1).text())
-            rand = float(self.table.item(row, 2).text())
-            steps.append(Step(key, delay, rand))
+        try:
+            for row in range(self.table.rowCount()):
+                key = self.table.item(row, 0).text()
+                # 添加异常处理，确保能够正确转换为浮点数
+                try:
+                    delay_text = self.table.item(row, 1).text()
+                    delay = float(delay_text)
+                except ValueError:
+                    raise ValueError(f"第{row+1}行的延迟时间 '{delay_text}' 不是有效的数字")
+                
+                try:
+                    rand_text = self.table.item(row, 2).text()
+                    rand = float(rand_text)
+                except ValueError:
+                    raise ValueError(f"第{row+1}行的随机波动 '{rand_text}' 不是有效的数字")
+                
+                steps.append(Step(key, delay, rand))
+        except ValueError as e:
+            QMessageBox.critical(self, "输入错误", str(e))
+            return
         
         # 创建配置字典，包含步骤和循环参数
         config = {
@@ -220,6 +241,16 @@ class MacroConfigWindow(QWidget):
     def toggle_game_mode_directinput(self, state):
         """切换SendInput游戏模式"""
         self.executor.set_game_mode_directinput(state == Qt.CheckState.Checked.value)
+        # 如果启用了pydirectinput模式，自动取消勾选win32模式
+        if state == Qt.CheckState.Checked.value:
+            self.game_mode_win32_checkbox.setChecked(False)
+            
+    def toggle_game_mode_win32(self, state):
+        """切换pywin32游戏模式"""
+        self.executor.set_game_mode_win32(state == Qt.CheckState.Checked.value)
+        # 如果启用了win32模式，自动取消勾选pydirectinput模式
+        if state == Qt.CheckState.Checked.value:
+            self.game_mode_directinput_checkbox.setChecked(False)
 
     def start_macro(self):
         start_key = config.get_key_by_title("启动/暂停")
@@ -249,11 +280,26 @@ class MacroConfigWindow(QWidget):
                 self.start_btn.setText("暂停")
 
         steps = []
-        for row in range(self.table.rowCount()):
-            key = self.table.item(row, 0).text()
-            delay = float(self.table.item(row, 1).text())
-            rand = float(self.table.item(row, 2).text())
-            steps.append(Step(key, delay, rand))
+        try:
+            for row in range(self.table.rowCount()):
+                key = self.table.item(row, 0).text()
+                # 添加异常处理，确保能够正确转换为浮点数
+                try:
+                    delay_text = self.table.item(row, 1).text()
+                    delay = float(delay_text)
+                except ValueError:
+                    raise ValueError(f"第{row+1}行的延迟时间 '{delay_text}' 不是有效的数字")
+                
+                try:
+                    rand_text = self.table.item(row, 2).text()
+                    rand = float(rand_text)
+                except ValueError:
+                    raise ValueError(f"第{row+1}行的随机波动 '{rand_text}' 不是有效的数字")
+                
+                steps.append(Step(key, delay, rand))
+        except ValueError as e:
+            QMessageBox.critical(self, "输入错误", str(e))
+            return
         self.executor.load_steps(steps,
                                  loop_count=self.loop_count.value(),
                                  loop_time=self.loop_time.value())

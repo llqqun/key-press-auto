@@ -16,6 +16,6 @@ PyQt6_sip==13.10.2
 PyRect==0.2.0
 PyScreeze==1.0.1
 pytweening==1.2.0
-pywin32==308
+pywin32==311
 pywin32-ctypes==0.2.3
 setuptools==80.9.0
